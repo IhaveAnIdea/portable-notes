@@ -1,8 +1,8 @@
+
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Portable Notes (Encrypted Optional)</title>
 
 <style>
@@ -141,7 +141,7 @@
 </style>
 
 <!-- Embedded snapshot for portable export/import (do not remove) -->
-<script id="PORTABLE_DB" type="application/json"></script>
+<script id="PORTABLE_DB" type="application/json">{"schema":2,"app":"portable-notes","mode":"plain","exportedAt":"2026-02-15T06:58:42.600Z","notes":[{"id":"n_ac086a75f8c4b8_19c6017d848","title":"Sample Note","content":"Your notes are stored only in your browser. You may export them for sharing or transferring between devices.","createdAt":"2026-02-15T06:58:21.384Z","updatedAt":"2026-02-15T06:58:21.384Z"}]}</script>
 </head>
 
 <body>
@@ -165,12 +165,12 @@
   <main>
     <section class="card">
       <div class="hd">
-        <div class="label">Create & Search</div>
+        <div class="label">Create &amp; Search</div>
         <div class="status">
-          <span class="dot" id="dbDot"></span>
-          <span class="small" id="dbStatus">Initializing…</span>
-          <span class="pill" id="modePill">Mode: …</span>
-          <span class="pill" id="countPill">0 notes</span>
+          <span class="dot ok" id="dbDot"></span>
+          <span class="small" id="dbStatus">Ready (Plain mode)</span>
+          <span class="pill" id="modePill">Mode: Plain (No Password)</span>
+          <span class="pill" id="countPill">1 note</span>
         </div>
       </div>
       <div class="bd">
@@ -179,9 +179,9 @@
           <div class="small">Click <span class="kbd">Unlock</span> to view/edit. Data is encrypted at rest in IndexedDB.</div>
         </div>
         <div class="row">
-          <input id="title" type="text" placeholder="Title (e.g., “Insurance list”, “Shot list”, “Follow-up”)"/>
+          <input id="title" type="text" placeholder="Title (e.g., “Insurance list”, “Shot list”, “Follow-up”)">
           <textarea id="content" placeholder="Write something helpful…"></textarea>
-          <input id="search" type="text" placeholder="Search notes (title/content)…"/>
+          <input id="search" type="text" placeholder="Search notes (title/content)…">
         </div>
         <div class="hint">
           Portable export embeds either plaintext notes or an encrypted vault snapshot into this HTML file.
@@ -196,7 +196,7 @@
         <div class="small">Offline, no server</div>
       </div>
       <div class="bd">
-        <div id="list"></div>
+        <div id="list"><div class="note"><div class="top"><div><div class="t">Sample Note</div><div class="meta">Updated Feb 14, 2026, 10:58 PM</div></div><div class="btns"><button>Edit</button><button>Copy</button><button class="danger">Delete</button></div></div><div class="c">Your notes are stored only in your browser. You may export them for sharing or transferring between devices.</div></div></div>
         <div class="sep"></div>
         <div class="small">Tip: <span class="kbd">Ctrl</span>+<span class="kbd">Enter</span> saves (Cmd+Enter on Mac).</div>
       </div>
@@ -1007,5 +1007,6 @@ window.addEventListener("keydown", (e) => {
 })();
 </script>
 
-</body>
-</html>
+
+
+</body></html>
