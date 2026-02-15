@@ -1,0 +1,1011 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Portable Notes (Encrypted Optional)</title>
+
+<style>
+  :root{
+    --bg:#0b1220;
+    --card:rgba(255,255,255,.06);
+    --card2:rgba(255,255,255,.04);
+    --text:rgba(255,255,255,.92);
+    --muted:rgba(255,255,255,.66);
+    --border:rgba(255,255,255,.14);
+    --shadow:0 12px 40px rgba(0,0,0,.35);
+    --radius:18px;
+    --ok:#86efac;
+    --warn:#fbbf24;
+    --err:#fb7185;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    background:
+      radial-gradient(1200px 800px at 15% 10%, rgba(125,211,252,.18), transparent 55%),
+      radial-gradient(1000px 700px at 85% 20%, rgba(134,239,172,.14), transparent 55%),
+      radial-gradient(900px 650px at 60% 90%, rgba(251,113,133,.12), transparent 55%),
+      var(--bg);
+    color:var(--text);
+  }
+  .wrap{ max-width:980px; margin:0 auto; padding:22px; }
+  header{
+    display:flex; gap:14px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+    padding:14px 14px;
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+    box-shadow:var(--shadow);
+    backdrop-filter: blur(10px);
+  }
+  .title{ display:flex; flex-direction:column; gap:2px; }
+  .title h1{ margin:0; font-size:16px; letter-spacing:.3px; }
+  .title .sub{ color:var(--muted); font-size:12px; }
+  .actions{ display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+  button{
+    border:1px solid var(--border);
+    background:rgba(255,255,255,.06);
+    color:var(--text);
+    padding:10px 12px;
+    border-radius:14px;
+    cursor:pointer;
+    font-weight:650;
+    font-size:13px;
+    transition: transform .05s ease, background .2s ease, border-color .2s ease, opacity .2s ease;
+    user-select:none;
+  }
+  button:hover{ background:rgba(255,255,255,.10); border-color:rgba(255,255,255,.20); }
+  button:active{ transform: translateY(1px); }
+  button.primary{ border-color: rgba(125,211,252,.45); }
+  button.ok{ border-color: rgba(134,239,172,.45); }
+  button.danger{ border-color: rgba(251,113,133,.55); }
+  button:disabled{ opacity:.45; cursor:not-allowed; transform:none; }
+
+  main{ margin-top:16px; display:grid; grid-template-columns:1.1fr .9fr; gap:14px; }
+  @media (max-width: 860px){ main{ grid-template-columns:1fr; } }
+
+  .card{
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    background:var(--card);
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .card .hd{
+    padding:12px 14px;
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--card2);
+  }
+  .card .hd .label{ font-weight:750; font-size:13px; letter-spacing:.2px; }
+  .card .bd{ padding:14px; }
+  input[type="text"], textarea{
+    width:100%;
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:10px 12px;
+    background:rgba(0,0,0,.18);
+    color:var(--text);
+    outline:none;
+    font-size:14px;
+  }
+  textarea{ min-height:110px; resize:vertical; }
+  .row{ display:grid; grid-template-columns:1fr; gap:10px; }
+  .hint{ font-size:12px; color:var(--muted); margin-top:8px; line-height:1.35; }
+
+  .pill{
+    font-size:12px; padding:4px 10px; border-radius:999px;
+    border:1px solid var(--border); background:rgba(255,255,255,.04); color:var(--muted);
+    white-space:nowrap;
+  }
+  .status{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+  .dot{ width:10px; height:10px; border-radius:999px; background:rgba(255,255,255,.25); }
+  .dot.ok{ background:var(--ok); }
+  .dot.warn{ background:var(--warn); }
+  .dot.err{ background:var(--err); }
+
+  .lockBanner{
+    border:1px dashed rgba(255,255,255,.25);
+    background:rgba(0,0,0,.18);
+    border-radius:14px;
+    padding:12px;
+    margin-bottom:12px;
+  }
+  .kbd{
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size:12px; color:rgba(255,255,255,.85);
+    border:1px solid var(--border);
+    background:rgba(0,0,0,.18);
+    border-radius:10px; padding:2px 8px;
+  }
+
+  .note{
+    padding:12px 12px;
+    border:1px solid var(--border);
+    border-radius:16px;
+    background:rgba(0,0,0,.18);
+    display:grid;
+    gap:6px;
+    margin-bottom:10px;
+  }
+  .note .top{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+  .note .t{ font-weight:800; font-size:14px; }
+  .note .meta{ font-size:12px; color:var(--muted); }
+  .note .c{ font-size:13px; color:rgba(255,255,255,.88); line-height:1.35; white-space:pre-wrap; }
+  .note .btns{ display:flex; gap:8px; flex-wrap:wrap; }
+  .small{ font-size:12px; color:var(--muted); }
+  .sep{ height:1px; background:var(--border); margin:10px 0; }
+</style>
+
+<!-- Embedded snapshot for portable export/import (do not remove) -->
+<script id="PORTABLE_DB" type="application/json"></script>
+</head>
+
+<body>
+<div class="wrap">
+  <header>
+    <div class="title">
+      <h1>Portable Notes</h1>
+      <div class="sub">Single-file HTML + IndexedDB + optional password encryption + portable export</div>
+    </div>
+    <div class="actions">
+      <button class="primary" id="btnSave">Save Note</button>
+      <button id="btnExportJson">Export JSON</button>
+      <button class="ok" id="btnExportHtml">Export Portable HTML</button>
+      <button id="btnSetPass">Set/Change Password</button>
+      <button id="btnUnlock">Unlock</button>
+      <button id="btnLock">Lock</button>
+      <button class="danger" id="btnReset">Factory Reset</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="hd">
+        <div class="label">Create & Search</div>
+        <div class="status">
+          <span class="dot" id="dbDot"></span>
+          <span class="small" id="dbStatus">Initializing…</span>
+          <span class="pill" id="modePill">Mode: …</span>
+          <span class="pill" id="countPill">0 notes</span>
+        </div>
+      </div>
+      <div class="bd">
+        <div id="lockBanner" class="lockBanner" style="display:none;">
+          <div style="font-weight:800; margin-bottom:6px;">🔒 Encrypted vault is locked</div>
+          <div class="small">Click <span class="kbd">Unlock</span> to view/edit. Data is encrypted at rest in IndexedDB.</div>
+        </div>
+        <div class="row">
+          <input id="title" type="text" placeholder="Title (e.g., “Insurance list”, “Shot list”, “Follow-up”)"/>
+          <textarea id="content" placeholder="Write something helpful…"></textarea>
+          <input id="search" type="text" placeholder="Search notes (title/content)…"/>
+        </div>
+        <div class="hint">
+          Portable export embeds either plaintext notes or an encrypted vault snapshot into this HTML file.
+          Encryption uses <span class="kbd">PBKDF2 + AES-GCM</span>. If you forget the password, notes cannot be recovered.
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="hd">
+        <div class="label">Your notes</div>
+        <div class="small">Offline, no server</div>
+      </div>
+      <div class="bd">
+        <div id="list"></div>
+        <div class="sep"></div>
+        <div class="small">Tip: <span class="kbd">Ctrl</span>+<span class="kbd">Enter</span> saves (Cmd+Enter on Mac).</div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+/* =========================================================
+   Core idea of this "fixed" version:
+   - DO NOT use regex/string replacement of HTML to export.
+   - Instead: set PORTABLE_DB.textContent in the live DOM,
+     serialize outerHTML, then restore.
+   - Also: always escape "<" in embedded JSON to prevent any
+     possible script-tag termination inside embedded content.
+========================================================= */
+
+const APP = {
+  DB_NAME: "portable_notes_db_enc",
+  DB_VERSION: 2,
+  STORE_NOTES: "notes",     // plaintext mode records
+  STORE_VAULT: "vault",     // encrypted mode single record
+  STORE_META: "meta",       // flags + crypto params + import flag
+  META: {
+    ENC_ENABLED: "enc_enabled",
+    ENC_ITER: "enc_iter",
+    ENC_SALT_B64: "enc_salt_b64",
+    ENC_VERIFIER: "enc_verifier",
+    EMBED_IMPORT_DONE: "embedded_import_done",
+  },
+  DEFAULT_PBKDF2_ITER: 210000,
+};
+
+let db = null;
+
+const state = {
+  encEnabled: false,
+  unlocked: false,   // for encrypted mode
+  notes: [],         // in-memory notes (plaintext or decrypted)
+  crypto: {
+    iter: APP.DEFAULT_PBKDF2_ITER,
+    salt: null,      // Uint8Array
+    key: null,       // CryptoKey
+  }
+};
+
+function $(id){ return document.getElementById(id); }
+const el = {
+  title: $("title"),
+  content: $("content"),
+  search: $("search"),
+  list: $("list"),
+  btnSave: $("btnSave"),
+  btnExportJson: $("btnExportJson"),
+  btnExportHtml: $("btnExportHtml"),
+  btnSetPass: $("btnSetPass"),
+  btnUnlock: $("btnUnlock"),
+  btnLock: $("btnLock"),
+  btnReset: $("btnReset"),
+  dbDot: $("dbDot"),
+  dbStatus: $("dbStatus"),
+  modePill: $("modePill"),
+  countPill: $("countPill"),
+  lockBanner: $("lockBanner"),
+};
+
+function setStatus(kind, text){
+  el.dbDot.className = "dot " + (kind || "");
+  el.dbStatus.textContent = text;
+}
+
+function nowISO(){ return new Date().toISOString(); }
+function fmtDate(iso){
+  const d = new Date(iso);
+  return d.toLocaleString(undefined, { year:"numeric", month:"short", day:"2-digit", hour:"2-digit", minute:"2-digit" });
+}
+function uid(){
+  return "n_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
+}
+
+/* =========================
+   IndexedDB
+========================= */
+function openDB(){
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(APP.DB_NAME, APP.DB_VERSION);
+
+    req.onupgradeneeded = () => {
+      const d = req.result;
+
+      if (!d.objectStoreNames.contains(APP.STORE_NOTES)) {
+        const s = d.createObjectStore(APP.STORE_NOTES, { keyPath: "id" });
+        s.createIndex("updatedAt", "updatedAt", { unique:false });
+      }
+      if (!d.objectStoreNames.contains(APP.STORE_VAULT)) {
+        d.createObjectStore(APP.STORE_VAULT, { keyPath: "id" }); // id: "vault"
+      }
+      if (!d.objectStoreNames.contains(APP.STORE_META)) {
+        d.createObjectStore(APP.STORE_META, { keyPath: "key" });
+      }
+    };
+
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function storeTx(storeName, mode="readonly"){
+  const t = db.transaction(storeName, mode);
+  return [t.objectStore(storeName), t];
+}
+
+async function metaGet(key){
+  const [s] = storeTx(APP.STORE_META, "readonly");
+  const req = s.get(key);
+  return new Promise((res, rej) => {
+    req.onsuccess = () => res(req.result ? req.result.value : undefined);
+    req.onerror = () => rej(req.error);
+  });
+}
+
+async function metaSet(key, value){
+  const [s, t] = storeTx(APP.STORE_META, "readwrite");
+  s.put({ key, value });
+  return new Promise((res, rej) => {
+    t.oncomplete = () => res();
+    t.onerror = () => rej(t.error);
+  });
+}
+
+async function plainGetAllNotes(){
+  const [s] = storeTx(APP.STORE_NOTES, "readonly");
+  const req = s.getAll();
+  return new Promise((res, rej) => {
+    req.onsuccess = () => res(req.result || []);
+    req.onerror = () => rej(req.error);
+  });
+}
+
+async function plainUpsertNote(note){
+  const [s, t] = storeTx(APP.STORE_NOTES, "readwrite");
+  s.put(note);
+  return new Promise((res, rej) => {
+    t.oncomplete = () => res();
+    t.onerror = () => rej(t.error);
+  });
+}
+
+async function plainDeleteNote(id){
+  const [s, t] = storeTx(APP.STORE_NOTES, "readwrite");
+  s.delete(id);
+  return new Promise((res, rej) => {
+    t.oncomplete = () => res();
+    t.onerror = () => rej(t.error);
+  });
+}
+
+async function plainClearNotes(){
+  const [s, t] = storeTx(APP.STORE_NOTES, "readwrite");
+  s.clear();
+  return new Promise((res, rej) => {
+    t.oncomplete = () => res();
+    t.onerror = () => rej(t.error);
+  });
+}
+
+async function vaultGet(){
+  const [s] = storeTx(APP.STORE_VAULT, "readonly");
+  const req = s.get("vault");
+  return new Promise((res, rej) => {
+    req.onsuccess = () => res(req.result || null);
+    req.onerror = () => rej(req.error);
+  });
+}
+
+async function vaultSet(record){
+  const [s, t] = storeTx(APP.STORE_VAULT, "readwrite");
+  s.put(record);
+  return new Promise((res, rej) => {
+    t.oncomplete = () => res();
+    t.onerror = () => rej(t.error);
+  });
+}
+
+/* =========================
+   Base64 + Encoding
+========================= */
+function u8ToB64(u8){
+  let bin = "";
+  const chunk = 0x8000;
+  for (let i=0; i<u8.length; i+=chunk){
+    bin += String.fromCharCode(...u8.subarray(i, i+chunk));
+  }
+  return btoa(bin);
+}
+function b64ToU8(b64){
+  const bin = atob(b64);
+  const u8 = new Uint8Array(bin.length);
+  for (let i=0;i<bin.length;i++) u8[i] = bin.charCodeAt(i);
+  return u8;
+}
+function strToU8(str){ return new TextEncoder().encode(str); }
+function u8ToStr(u8){ return new TextDecoder().decode(u8); }
+
+/* =========================
+   Crypto (PBKDF2 + AES-GCM)
+========================= */
+async function deriveKeyFromPassword(password, saltU8, iter){
+  const baseKey = await crypto.subtle.importKey(
+    "raw",
+    strToU8(password),
+    { name:"PBKDF2" },
+    false,
+    ["deriveKey"]
+  );
+
+  return crypto.subtle.deriveKey(
+    { name:"PBKDF2", salt: saltU8, iterations: iter, hash:"SHA-256" },
+    baseKey,
+    { name:"AES-GCM", length: 256 },
+    false,
+    ["encrypt","decrypt"]
+  );
+}
+
+async function aesGcmEncrypt(key, plaintextU8){
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ctBuf = await crypto.subtle.encrypt({ name:"AES-GCM", iv }, key, plaintextU8);
+  return { ivB64: u8ToB64(iv), ctB64: u8ToB64(new Uint8Array(ctBuf)) };
+}
+
+async function aesGcmDecrypt(key, ivB64, ctB64){
+  const iv = b64ToU8(ivB64);
+  const ct = b64ToU8(ctB64);
+  const ptBuf = await crypto.subtle.decrypt({ name:"AES-GCM", iv }, key, ct);
+  return new Uint8Array(ptBuf);
+}
+
+/* =========================
+   Mode + Vault Logic
+========================= */
+async function loadModeFromMeta(){
+  state.encEnabled = !!(await metaGet(APP.META.ENC_ENABLED));
+  const iter = await metaGet(APP.META.ENC_ITER);
+  const saltB64 = await metaGet(APP.META.ENC_SALT_B64);
+  if (iter) state.crypto.iter = iter;
+  if (saltB64) state.crypto.salt = b64ToU8(saltB64);
+
+  state.unlocked = !state.encEnabled;
+  state.crypto.key = null;
+}
+
+async function loadNotesIntoMemory(){
+  if (!state.encEnabled) {
+    state.notes = await plainGetAllNotes();
+    return;
+  }
+  if (!state.unlocked || !state.crypto.key) {
+    state.notes = [];
+    return;
+  }
+  const v = await vaultGet();
+  if (!v || !v.ivB64 || !v.ctB64) {
+    state.notes = [];
+    return;
+  }
+  const pt = await aesGcmDecrypt(state.crypto.key, v.ivB64, v.ctB64);
+  const arr = JSON.parse(u8ToStr(pt));
+  state.notes = Array.isArray(arr) ? arr : [];
+}
+
+async function persistNotesFromMemory(){
+  if (!state.encEnabled) {
+    // Simple strategy: clear + reinsert (safe for small apps; can optimize later)
+    await plainClearNotes();
+    for (const n of state.notes) await plainUpsertNote(n);
+    return;
+  }
+  if (!state.unlocked || !state.crypto.key) throw new Error("Vault locked");
+  const json = JSON.stringify(state.notes);
+  const enc = await aesGcmEncrypt(state.crypto.key, strToU8(json));
+  await vaultSet({ id:"vault", ivB64: enc.ivB64, ctB64: enc.ctB64, updatedAt: nowISO() });
+}
+
+async function lockVault(){
+  if (!state.encEnabled) return;
+  state.unlocked = false;
+  state.crypto.key = null;
+  state.notes = [];
+}
+
+async function unlockWithPassword(password){
+  if (!state.encEnabled) {
+    state.unlocked = true;
+    await loadNotesIntoMemory();
+    return true;
+  }
+  const saltB64 = await metaGet(APP.META.ENC_SALT_B64);
+  const verifier = await metaGet(APP.META.ENC_VERIFIER);
+  if (!saltB64 || !verifier || !verifier.ivB64 || !verifier.ctB64) return false;
+
+  const salt = b64ToU8(saltB64);
+  const key = await deriveKeyFromPassword(password, salt, state.crypto.iter);
+
+  try{
+    const pt = await aesGcmDecrypt(key, verifier.ivB64, verifier.ctB64);
+    if (u8ToStr(pt) !== "portable-notes-verifier-v1") return false;
+  } catch {
+    return false;
+  }
+
+  state.crypto.salt = salt;
+  state.crypto.key = key;
+  state.unlocked = true;
+  await loadNotesIntoMemory();
+  return true;
+}
+
+async function enableEncryption(password){
+  // Derive key with fresh salt
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iter = APP.DEFAULT_PBKDF2_ITER;
+  const key = await deriveKeyFromPassword(password, salt, iter);
+
+  // Store verifier
+  const verifier = await aesGcmEncrypt(key, strToU8("portable-notes-verifier-v1"));
+
+  // Migrate existing plaintext notes
+  const existing = await plainGetAllNotes();
+
+  await metaSet(APP.META.ENC_ENABLED, true);
+  await metaSet(APP.META.ENC_ITER, iter);
+  await metaSet(APP.META.ENC_SALT_B64, u8ToB64(salt));
+  await metaSet(APP.META.ENC_VERIFIER, verifier);
+
+  state.encEnabled = true;
+  state.crypto.iter = iter;
+  state.crypto.salt = salt;
+  state.crypto.key = key;
+  state.unlocked = true;
+  state.notes = existing;
+
+  await persistNotesFromMemory();
+  await plainClearNotes(); // remove plaintext copies
+}
+
+async function changePassword(oldPw, newPw){
+  const ok = await unlockWithPassword(oldPw);
+  if (!ok) throw new Error("Wrong password");
+
+  const notes = state.notes;
+
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iter = APP.DEFAULT_PBKDF2_ITER;
+  const key = await deriveKeyFromPassword(newPw, salt, iter);
+  const verifier = await aesGcmEncrypt(key, strToU8("portable-notes-verifier-v1"));
+
+  await metaSet(APP.META.ENC_ITER, iter);
+  await metaSet(APP.META.ENC_SALT_B64, u8ToB64(salt));
+  await metaSet(APP.META.ENC_VERIFIER, verifier);
+
+  state.crypto.iter = iter;
+  state.crypto.salt = salt;
+  state.crypto.key = key;
+  state.unlocked = true;
+  state.notes = notes;
+
+  await persistNotesFromMemory();
+}
+
+async function disableEncryption(password){
+  const ok = await unlockWithPassword(password);
+  if (!ok) throw new Error("Wrong password");
+
+  // Write plaintext notes back
+  await plainClearNotes();
+  for (const n of state.notes) await plainUpsertNote(n);
+
+  // Clear vault + meta
+  await vaultSet({ id:"vault" });
+  await metaSet(APP.META.ENC_ENABLED, false);
+  await metaSet(APP.META.ENC_ITER, undefined);
+  await metaSet(APP.META.ENC_SALT_B64, undefined);
+  await metaSet(APP.META.ENC_VERIFIER, undefined);
+
+  state.encEnabled = false;
+  state.unlocked = true;
+  state.crypto.key = null;
+  state.crypto.salt = null;
+  state.notes = await plainGetAllNotes();
+}
+
+/* =========================
+   Notes CRUD
+========================= */
+async function addNote(title, content){
+  const n = {
+    id: uid(),
+    title: (title || "").trim() || "Untitled",
+    content: (content || "").trim(),
+    createdAt: nowISO(),
+    updatedAt: nowISO(),
+  };
+  state.notes.push(n);
+  await persistNotesFromMemory();
+}
+
+async function editNote(id, newTitle, newContent){
+  const n = state.notes.find(x => x.id === id);
+  if (!n) return;
+  n.title = (newTitle || "").trim() || "Untitled";
+  n.content = (newContent || "").trim();
+  n.updatedAt = nowISO();
+  await persistNotesFromMemory();
+}
+
+async function deleteNote(id){
+  if (!state.encEnabled) {
+    await plainDeleteNote(id);
+    state.notes = state.notes.filter(n => n.id !== id);
+    return;
+  }
+  if (!state.unlocked) throw new Error("Vault locked");
+  state.notes = state.notes.filter(n => n.id !== id);
+  await persistNotesFromMemory();
+}
+
+/* =========================
+   Render
+========================= */
+function matches(note, q){
+  if (!q) return true;
+  const qq = q.toLowerCase();
+  return (note.title||"").toLowerCase().includes(qq) || (note.content||"").toLowerCase().includes(qq);
+}
+
+async function render(){
+  el.modePill.textContent = state.encEnabled
+    ? (state.unlocked ? "Mode: Encrypted (Unlocked)" : "Mode: Encrypted (Locked)")
+    : "Mode: Plain (No Password)";
+
+  const locked = state.encEnabled && !state.unlocked;
+  el.lockBanner.style.display = locked ? "block" : "none";
+  el.title.disabled = locked;
+  el.content.disabled = locked;
+  el.btnSave.disabled = locked;
+
+  if (!state.encEnabled) {
+    state.notes = await plainGetAllNotes();
+  }
+
+  const q = el.search.value.trim();
+  const notes = [...state.notes].sort((a,b)=> (b.updatedAt||b.createdAt).localeCompare(a.updatedAt||a.createdAt));
+  const filtered = notes.filter(n => matches(n, q));
+
+  el.countPill.textContent = `${notes.length} note${notes.length===1?"":"s"}`;
+  el.list.innerHTML = "";
+
+  if (locked) {
+    el.list.innerHTML = `<div class="small">Vault locked. Click <span class="kbd">Unlock</span> to view notes.</div>`;
+    return;
+  }
+
+  if (filtered.length === 0) {
+    el.list.innerHTML = `<div class="small">${q ? "No matches." : "No notes yet. Save your first note."}</div>`;
+    return;
+  }
+
+  for (const n of filtered){
+    const item = document.createElement("div");
+    item.className = "note";
+
+    const top = document.createElement("div");
+    top.className = "top";
+
+    const left = document.createElement("div");
+    const t = document.createElement("div");
+    t.className = "t";
+    t.textContent = n.title;
+
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.textContent = `Updated ${fmtDate(n.updatedAt || n.createdAt)}`;
+
+    left.appendChild(t);
+    left.appendChild(meta);
+
+    const btns = document.createElement("div");
+    btns.className = "btns";
+
+    const bEdit = document.createElement("button");
+    bEdit.textContent = "Edit";
+    bEdit.onclick = async () => {
+      const nt = prompt("Edit title:", n.title);
+      if (nt === null) return;
+      const nc = prompt("Edit content:", n.content);
+      if (nc === null) return;
+      await editNote(n.id, nt, nc);
+      await render();
+    };
+
+    const bCopy = document.createElement("button");
+    bCopy.textContent = "Copy";
+    bCopy.onclick = async () => {
+      const text = `${n.title}\n\n${n.content}`;
+      await navigator.clipboard.writeText(text);
+      bCopy.textContent = "Copied ✓";
+      setTimeout(()=> bCopy.textContent="Copy", 900);
+    };
+
+    const bDel = document.createElement("button");
+    bDel.className = "danger";
+    bDel.textContent = "Delete";
+    bDel.onclick = async () => {
+      if (!confirm(`Delete "${n.title}"?`)) return;
+      await deleteNote(n.id);
+      await render();
+    };
+
+    btns.appendChild(bEdit);
+    btns.appendChild(bCopy);
+    btns.appendChild(bDel);
+
+    top.appendChild(left);
+    top.appendChild(btns);
+
+    const c = document.createElement("div");
+    c.className = "c";
+    c.textContent = n.content || "(empty)";
+
+    item.appendChild(top);
+    item.appendChild(c);
+    el.list.appendChild(item);
+  }
+}
+
+/* =========================
+   Portable Export / Import
+========================= */
+function escapeForEmbeddedJson(jsonStr){
+  // The only truly essential escape is "<" (prevents any chance of embedded content
+  // creating markup like a script-closing tag). We also escape "&" and ">" for consistency.
+  return jsonStr
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026");
+}
+
+async function exportJSON(){
+  if (state.encEnabled && !state.unlocked) {
+    alert("Vault is locked. Unlock to export decrypted JSON, or use Portable HTML export to keep it encrypted.");
+    return;
+  }
+  const notes = state.encEnabled ? state.notes : await plainGetAllNotes();
+  const payload = { schema: 2, app:"portable-notes", mode: state.encEnabled ? "encrypted(decrypted-export)" : "plain", exportedAt: nowISO(), notes };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type:"application/json" });
+  downloadBlob(blob, `portable-notes_${new Date().toISOString().slice(0,10)}.json`);
+}
+
+async function exportPortableHTML(){
+  let payload;
+
+  if (!state.encEnabled) {
+    const notes = await plainGetAllNotes();
+    payload = { schema: 2, app:"portable-notes", mode:"plain", exportedAt: nowISO(), notes };
+  } else {
+    if (state.unlocked) await persistNotesFromMemory();
+    const v = await vaultGet();
+    payload = {
+      schema: 2, app:"portable-notes", mode:"encrypted", exportedAt: nowISO(),
+      enc: {
+        iter: await metaGet(APP.META.ENC_ITER),
+        saltB64: await metaGet(APP.META.ENC_SALT_B64),
+        verifier: await metaGet(APP.META.ENC_VERIFIER),
+        vault: v ? { ivB64: v.ivB64, ctB64: v.ctB64, updatedAt: v.updatedAt } : null
+      }
+    };
+  }
+
+  const json = JSON.stringify(payload);
+  const safeJson = escapeForEmbeddedJson(json);
+
+  const tag = document.getElementById("PORTABLE_DB");
+  if (!tag) {
+    alert("Missing PORTABLE_DB element.");
+    return;
+  }
+
+  // Inject into DOM, serialize, then restore (no regex / no string replace)
+  const original = tag.textContent;
+  tag.textContent = safeJson;
+
+  const html = "<!doctype html>\n" + document.documentElement.outerHTML;
+
+  tag.textContent = original;
+
+  const blob = new Blob([html], { type:"text/html" });
+  downloadBlob(blob, `portable-notes_${new Date().toISOString().slice(0,10)}.html`);
+}
+
+async function importEmbeddedIfPresent(){
+  const already = await metaGet(APP.META.EMBED_IMPORT_DONE);
+  if (already) return;
+
+  const tag = document.getElementById("PORTABLE_DB");
+  const raw = (tag && tag.textContent || "").trim();
+  if (!raw) return;
+
+  let payload;
+  try { payload = JSON.parse(raw); } catch { return; }
+  if (!payload || payload.app !== "portable-notes" || payload.schema !== 2) return;
+
+  if (payload.mode === "plain" && Array.isArray(payload.notes)) {
+    // Only import if local is not encrypted already
+    const encLocal = !!(await metaGet(APP.META.ENC_ENABLED));
+    if (!encLocal) {
+      for (const n of payload.notes) {
+        if (!n || !n.id) continue;
+        await plainUpsertNote(n);
+      }
+    }
+  }
+
+  if (payload.mode === "encrypted" && payload.enc && payload.enc.saltB64 && payload.enc.verifier && payload.enc.vault) {
+    // Import encrypted snapshot into local DB (overwrite)
+    await metaSet(APP.META.ENC_ENABLED, true);
+    await metaSet(APP.META.ENC_ITER, payload.enc.iter || APP.DEFAULT_PBKDF2_ITER);
+    await metaSet(APP.META.ENC_SALT_B64, payload.enc.saltB64);
+    await metaSet(APP.META.ENC_VERIFIER, payload.enc.verifier);
+
+    await vaultSet({ id:"vault", ...payload.enc.vault });
+    await plainClearNotes();
+  }
+
+  await metaSet(APP.META.EMBED_IMPORT_DONE, true);
+}
+
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=> URL.revokeObjectURL(url), 600);
+}
+
+/* =========================
+   UI Wiring
+========================= */
+el.btnSave.onclick = async () => {
+  try{
+    const t = el.title.value;
+    const c = el.content.value;
+    if (!t.trim() && !c.trim()) return;
+    if (state.encEnabled && !state.unlocked) return;
+
+    if (!state.encEnabled) state.notes = await plainGetAllNotes();
+    await addNote(t, c);
+
+    el.title.value = "";
+    el.content.value = "";
+    await render();
+  } catch (e) {
+    console.error(e);
+    alert("Save failed: " + (e?.message || e));
+  }
+};
+
+el.search.oninput = () => render();
+el.btnExportJson.onclick = () => exportJSON();
+el.btnExportHtml.onclick = () => exportPortableHTML();
+
+el.btnUnlock.onclick = async () => {
+  if (!state.encEnabled) {
+    alert("No password set. You're in plain mode.");
+    return;
+  }
+  const pw = prompt("Enter password to unlock:");
+  if (pw === null) return;
+
+  setStatus("warn", "Unlocking…");
+  const ok = await unlockWithPassword(pw);
+  if (!ok) {
+    setStatus("err", "Wrong password");
+    alert("Wrong password.");
+    await lockVault();
+    await render();
+    return;
+  }
+  setStatus("ok", "Unlocked");
+  await render();
+};
+
+el.btnLock.onclick = async () => {
+  await lockVault();
+  setStatus("ok", "Locked");
+  await render();
+};
+
+el.btnSetPass.onclick = async () => {
+  try{
+    if (!state.encEnabled) {
+      const pw1 = prompt("Set a password (required to open notes):");
+      if (pw1 === null) return;
+      if (pw1.length < 6) { alert("Use at least 6 characters."); return; }
+      const pw2 = prompt("Confirm password:");
+      if (pw2 === null) return;
+      if (pw1 !== pw2) { alert("Passwords don't match."); return; }
+
+      setStatus("warn", "Enabling encryption…");
+      await enableEncryption(pw1);
+      setStatus("ok", "Encryption enabled (unlocked)");
+      await render();
+      alert("Encryption enabled. Notes are now stored encrypted at rest.");
+      return;
+    }
+
+    const choice = prompt('Type "change" to change password, or "disable" to remove encryption:');
+    if (choice === null) return;
+
+    if (choice.toLowerCase() === "change") {
+      const oldPw = prompt("Old password:");
+      if (oldPw === null) return;
+      const newPw1 = prompt("New password:");
+      if (newPw1 === null) return;
+      if (newPw1.length < 6) { alert("Use at least 6 characters."); return; }
+      const newPw2 = prompt("Confirm new password:");
+      if (newPw2 === null) return;
+      if (newPw1 !== newPw2) { alert("Passwords don't match."); return; }
+
+      setStatus("warn", "Changing password…");
+      await changePassword(oldPw, newPw1);
+      setStatus("ok", "Password changed (unlocked)");
+      await render();
+      alert("Password changed.");
+      return;
+    }
+
+    if (choice.toLowerCase() === "disable") {
+      const pw = prompt("Enter password to disable encryption:");
+      if (pw === null) return;
+      setStatus("warn", "Disabling encryption…");
+      await disableEncryption(pw);
+      setStatus("ok", "Encryption disabled");
+      await render();
+      alert("Encryption disabled. Notes are back in plain mode.");
+      return;
+    }
+
+    alert('Canceled. Type exactly "change" or "disable".');
+  } catch (e) {
+    console.error(e);
+    setStatus("err", "Encryption error");
+    alert("Encryption action failed: " + (e?.message || e));
+  }
+};
+
+el.btnReset.onclick = async () => {
+  if (!confirm("This deletes ALL local data for this app (plain + encrypted). Continue?")) return;
+
+  db.close();
+  await new Promise((resolve, reject) => {
+    const req = indexedDB.deleteDatabase(APP.DB_NAME);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+    req.onblocked = () => reject(new Error("Delete blocked (close other tabs using this app)."));
+  });
+
+  location.reload();
+};
+
+// Ctrl/Cmd+Enter to save
+window.addEventListener("keydown", (e) => {
+  const isMac = navigator.platform.toLowerCase().includes("mac");
+  const mod = isMac ? e.metaKey : e.ctrlKey;
+  if (mod && e.key === "Enter") el.btnSave.click();
+});
+
+/* =========================
+   Init
+========================= */
+(async function init(){
+  try{
+    setStatus("warn", "Opening IndexedDB…");
+    db = await openDB();
+
+    setStatus("warn", "Checking embedded snapshot…");
+    await importEmbeddedIfPresent();
+
+    setStatus("warn", "Loading mode…");
+    await loadModeFromMeta();
+
+    if (!state.encEnabled) {
+      await loadNotesIntoMemory();
+      setStatus("ok", "Ready (Plain mode)");
+    } else {
+      await lockVault(); // start locked
+      setStatus("ok", "Ready (Encrypted mode - locked)");
+    }
+
+    await render();
+  } catch (e) {
+    console.error(e);
+    setStatus("err", "DB error: " + (e?.message || e));
+  }
+})();
+</script>
+
+</body>
+</html>
